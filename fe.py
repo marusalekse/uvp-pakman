@@ -4,18 +4,22 @@ import be
 SKALA = 20
 BARVA_STENE = '#003'
 BARVA_PAKMANA = '#EE0'
+OBRATNA_BARVA_PAKMANA = '#11F'
+
 BARVA_DUHCA = '#00E'
 KORAK_MS = 30
 
 VELIKOST_CEKINA = SKALA * be.polmer_kovancka * 2
 BARVA_CEKINA = "#00A"
 
-VELIKOST_BOMBONA = SKALA * be.polmer_bonbona * 2
-BARVA_BOMBONA = "#FF0"
+VELIKOST_bonbona = SKALA * be.polmer_bonbona * 2
+BARVA_bonbona = "#FF0"
+TOP_SCORE = 0
 
 class PrikazIgre:
-  def __init__(self, okno, ime_povrsine):
+  def __init__(self, okno, ime_povrsine, speed):
     self.okno = okno
+    self.speed = speed
     self.igra = be.Igra(ime_povrsine)
     self.platno = tk.Canvas(
         width=SKALA * self.igra.sirina,
@@ -24,33 +28,56 @@ class PrikazIgre:
     self.okno.bind('<Key>', self.obdelaj_tipko)
     self.platno.pack()
     self.narisi()
-    self.okno.after(KORAK_MS, self.korak)
+    self.okno.after(self.speed, self.korak)
 
   def koncaj(self, sporocilo):
+    global TOP_SCORE
+    TOP_SCORE += self.igra.rezultat
     self.okno.destroy()
     koncno_okno = tk.Tk()
-    sporocilo = tk.Label(koncno_okno, text="{}! Vaš rezultat: {}".format(sporocilo, self.igra.rezultat))
+    sporocilo = tk.Label(koncno_okno, text="{}! Vaš rezultat: {}".format(sporocilo, TOP_SCORE))
     sporocilo.pack()
     koncno_okno.mainloop()
     return
 
+  def levelWin(self):
+    global TOP_SCORE
+    TOP_SCORE += self.igra.rezultat
+    self.okno.destroy()
+    self.novo_okno = tk.Tk()
+    sporocilo = tk.Label(self.novo_okno, text="Level UP!!!")
+    sporocilo.pack()
+    self.novo_okno.after(3000, self.levelup)
+    self.novo_okno.mainloop()
+
+  def levelup(self):
+    #PONOVNI ZAGON
+    print("Level UP! SCORE:", self.igra.rezultat)
+    self.novo_okno.destroy()
+    okno = tk.Tk()
+    moj_program = PrikazIgre(okno, 'povrsina/povrsina.txt', self.speed - 2)
+    okno.mainloop()
+
   def korak(self):
-    self.igra.korak()
-    self.narisi()
-    self.okno.after(KORAK_MS, self.korak)
+    konec = not self.igra.korak()
+    if konec:
+      self.koncaj('Konec igre')
+    elif len(self.igra.plosca.cekini) == 0:
+      self.levelWin()
+    else:
+      self.narisi()
+      self.okno.after(self.speed, self.korak)
     
 
   def obdelaj_tipko(self, event):
-    return
-    #if event.keysym == 'Right':
-    #    self.igra.spremeni_smer(be.DESNO)
-    #elif event.keysym == 'Left':
-    #    self.igra.spremeni_smer(model.LEVO)
-    #elif event.keysym == 'Up':
-    #    self.igra.spremeni_smer(model.GOR)
-    #elif event.keysym == 'Down':
-    #    self.igra.spremeni_smer(model.DOL)
-    #self.narisi()
+    if event.keysym == 'Right':
+        self.igra.sprememba_smeri(be.DESNO)
+    elif event.keysym == 'Left':
+        self.igra.sprememba_smeri(be.LEVO)
+    elif event.keysym == 'Up':
+        self.igra.sprememba_smeri(be.GOR)
+    elif event.keysym == 'Down':
+        self.igra.sprememba_smeri(be.DOL)
 
   def narisi(self):
     self.platno.delete('all')
@@ -76,15 +103,15 @@ class PrikazIgre:
         outline = BARVA_CEKINA
       )
 
-    for bombon in self.igra.plosca.bomboni:
-      x_bombona, y_bombona = bombon
+    for bonbon in self.igra.plosca.bonboni:
+      x_bonbona, y_bonbona = bonbon
       self.platno.create_rectangle(
-        x_bombona * SKALA + (SKALA - VELIKOST_BOMBONA) / 2,
-        y_bombona * SKALA + (SKALA - VELIKOST_BOMBONA) / 2,
-        (x_bombona + 1) * SKALA - (SKALA - VELIKOST_BOMBONA) / 2,
-        (y_bombona + 1) * SKALA - (SKALA - VELIKOST_BOMBONA) / 2,
-        fill = BARVA_BOMBONA,
-        outline = BARVA_BOMBONA
+        x_bonbona * SKALA + (SKALA - VELIKOST_bonbona) / 2,
+        y_bonbona * SKALA + (SKALA - VELIKOST_bonbona) / 2,
+        (x_bonbona + 1) * SKALA - (SKALA - VELIKOST_bonbona) / 2,
+        (y_bonbona + 1) * SKALA - (SKALA - VELIKOST_bonbona) / 2,
+        fill = BARVA_bonbona,
+        outline = BARVA_bonbona
       )
 
     for duhec in self.igra.duhci:
@@ -100,15 +127,19 @@ class PrikazIgre:
 
 
     pakman_x, pakman_y = self.igra.pakman.polozaj
+    if self.igra.pakman.aktiviranost <= 0 or 0 <= self.igra.pakman.aktiviranost % 10 < 5:
+      pak_barva = BARVA_PAKMANA
+    else:
+      pak_barva = OBRATNA_BARVA_PAKMANA
     self.platno.create_oval(
       pakman_x * SKALA,
       pakman_y * SKALA,
       (pakman_x + 1) * SKALA,
       (pakman_y + 1) * SKALA,
-        fill = BARVA_PAKMANA,
-        outline = BARVA_PAKMANA
+        fill = pak_barva,
+        outline = pak_barva
     )
 
 okno = tk.Tk()
-moj_program = PrikazIgre(okno, 'povrsina/povrsina.txt')
+moj_program = PrikazIgre(okno, 'povrsina/povrsina.txt', KORAK_MS)
 okno.mainloop()

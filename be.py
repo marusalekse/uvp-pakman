@@ -1,4 +1,6 @@
-LEVO, DESNO, GOR, DOL = (-1,0), (1,0), (0,1), (0,-1)
+import random
+
+LEVO, DESNO, GOR, DOL = (-1,0), (1,0), (0,-1), (0,1)
 polmer_pakmana = 0.5
 polmer_duhca = 0.5
 polmer_kovancka = 0.1
@@ -13,15 +15,12 @@ class Pakman:
   def __init__(self, zacetni_polozaj):
     self.polozaj = zacetni_polozaj
     self.zacetni_polozaj = zacetni_polozaj
-    self.aktiviranost = False
+    self.aktiviranost = 0
     self.trenutna_smer = LEVO
     self.naslednja_smer = LEVO
 
-  #najprej bom mogla klicat spremembo smeri
-  #klicala jo bom ob pritisku gumba, pogleda, e lahko spremeni smer, cene jo nastavi za naslednjo
-  #def sprememba_smeri():
 
-  #duhec bo classa Pakman, samo nioli ga ne bom aktivirala ali klicala funkcije sprememba smeri.
+
 
 class IgralnaPlosca:
   def __init__(self, ime_datoteke_s_poljem):
@@ -30,7 +29,7 @@ class IgralnaPlosca:
     self.zacetni_polozaji_duhcev = []
     self.portali = {}
     self.cekini = []
-    self.bomboni = []
+    self.bonboni = []
 
     #polje bomo naredili kot tabelo vseh polij, vrednosti na njih povejo kaj je na njemu
     with open(ime_datoteke_s_poljem) as f:
@@ -55,11 +54,12 @@ class IgralnaPlosca:
           # Bombon, ki z vso svojo energijo žre duhove
           elif znak == 'b':
             self.polje[y].append(0)
-            self.bomboni.append((x, y))
+            self.bonboni.append((x, y))
           # Duhec
           elif znak == 'd':
             self.polje[y].append(0)
             self.zacetni_polozaji_duhcev.append((x, y))
+          #Pakman
           elif znak == 'p':
             self.polje[y].append(0)
             self.zacetni_polozaj_pakmana = (x, y)
@@ -72,49 +72,104 @@ class Igra:
     self.plosca = IgralnaPlosca(ime_datoteke_s_poljem)
     self.pakman = Pakman(self.plosca.zacetni_polozaj_pakmana)
     self.duhci = []
-    self.reultat = 0
+    self.rezultat = 0
+    self.koraki_aktiviranost = 0
     self.igra_poteka = True
     self.visina = len(self.plosca.polje)
     self.sirina = len(self.plosca.polje[0])
     for duhec in self.plosca.zacetni_polozaji_duhcev:
       self.duhci.append(Pakman(duhec))
 
-  #nastavi parametre na hitrejs
-  # def zmaga():
-  # se vedno morm dt da je konc tko da se ne preskocta
-  # zdej morm se nekak klicat da se spremeni smer
-  # def premik duhca():
-  # 
   def zabijanje(self):
     for duhec in self.duhci:
         a, b = duhec.polozaj
         x, y = self.pakman.polozaj
         if (a-x)**2 + (b-y)**2 <= (polmer_pakmana + polmer_duhca)**2:
-          if self.pakman.aktiviranost == False:
-            self.igra_poteka = False
+          if self.pakman.aktiviranost <= 0:
+            # self.igra_poteka = False
+            # TODO KONCAJ IGRO
+            return False
           else:
             duhec.polozaj = duhec.zacetni_polozaj
+            self.rezultat += 50
+    return True
 
   def premik_pakmana(self, osebek):
+    if celostevilske_koordinate(osebek.polozaj):
+      for ime_portala, par_tock in self.plosca.portali.items():
+        x, y = osebek.polozaj
+        polozaj = (int(round(x)), int(round(y)))
+        if polozaj in par_tock:
+          preslikaj_v = (par_tock.index(polozaj) + 1) % 2
+          osebek.polozaj = par_tock[preslikaj_v]
+
     x, y = osebek.polozaj
-    smer_x, smer_y = osebek.smer
     if celostevilske_koordinate(osebek.polozaj):
       naslednja_smer_x, naslednja_smer_y = osebek.naslednja_smer
       # Preverim, ali je polje prosto
-      if self.plosca.polja[naslednja_smer_y + y][naslednja_smer_x + x] != "1":
-        osebek.smer = osebek.naslednja_smer
-      if self.plosca.polja[smer_y + y][smer_x + x] == "1":
+      if self.plosca.polje[naslednja_smer_y + int(round(y))][naslednja_smer_x + int(round(x))] != "1":
+        osebek.trenutna_smer = osebek.naslednja_smer
+    smer_x, smer_y = osebek.trenutna_smer
+    if celostevilske_koordinate(osebek.polozaj) and self.plosca.polje[smer_y + int(round(y))][smer_x + int(round(x))] == "1":
         return 
-    #za portal
-    smer_x, smer_y = osebek.smer
     osebek.polozaj = x + dolzina_premika * smer_x, y + dolzina_premika * smer_y
+
+  def sprememba_smeri(self, smer):
+    self.pakman.naslednja_smer = smer
 
   def premik_duhca(self, duhec):
     x, y = duhec.polozaj
-    #if x//1 == x and y//1 == y:
+    if celostevilske_koordinate(duhec.polozaj):
+      veljavne_smeri = []
+
+      sm_x, sm_y = duhec.trenutna_smer
+      naslednji_x, naslednji_y = (sm_x + int(round(x)), sm_y + int(round(y)))
+      odloci = True
+      if 0 < naslednji_x < self.sirina - 1 and 0 < naslednji_y < self.visina - 1 and self.plosca.polje[naslednji_y][naslednji_x] != "1":
+        odloci = False or random.randint(0, 10) == 2
+
+      if odloci:
+        for smer in [LEVO, DESNO, GOR, DOL]:
+          sm_x, sm_y = smer
+          naslednji_x, naslednji_y = (sm_x + int(round(x)), sm_y + int(round(y)))
+          if 0 < naslednji_x < self.sirina - 1 and 0 < naslednji_y < self.visina - 1 and self.plosca.polje[naslednji_y][naslednji_x] != "1":
+            veljavne_smeri.append(smer)
+        duhec.trenutna_smer = random.choice(veljavne_smeri)
+    smer_x, smer_y = duhec.trenutna_smer
+    duhec.polozaj = (x + smer_x * dolzina_premika, y + smer_y * dolzina_premika)
+
+
+
+  def preveri_pojej_cekin(self):
+    for cekin in self.plosca.cekini:
+      a, b = cekin
+      x, y = self.pakman.polozaj
+      if (a-x)**2 + (b-y)**2 < (polmer_pakmana + polmer_kovancka)**2:
+        self.plosca.cekini.remove(cekin)
+        self.rezultat += 5
+
+  # preveri ce je pakman na bonbonu, in aktivira pakmana
+  def preveri_pojej_bonbon(self):
+    for bonbon in self.plosca.bonboni:
+      a, b = bonbon
+      x, y = self.pakman.polozaj
+      if (a-x)**2 + (b-y)**2 < (polmer_pakmana + polmer_bonbona)**2:
+        self.plosca.bonboni.remove(bonbon)
+        self.rezultat += 25
+        # 10 korakov na polje, 50 polj
+        self.pakman.aktiviranost = 10 * 20 
+
   def korak(self):
-    self.zabijanje()
-    return
+    konec = not self.zabijanje()
+    if konec:
+      return False
+    self.premik_pakmana(self.pakman)
+    for duhec in self.duhci:
+      self.premik_duhca(duhec)
+    self.preveri_pojej_cekin()
+    self.preveri_pojej_bonbon()
+    self.pakman.aktiviranost -= 1
+    return True
 
     
 

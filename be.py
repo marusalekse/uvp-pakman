@@ -93,13 +93,24 @@ class Igra:
 
   #premakne pakmana, ce se da
   def premik_pakmana(self, osebek):
+    x, y = osebek.polozaj
     if celostevilske_koordinate(osebek.polozaj):
-      for ime_portala, par_tock in self.plosca.portali.items():
-        x, y = osebek.polozaj
-        polozaj = (int(round(x)), int(round(y)))
-        if polozaj in par_tock:
-          preslikaj_v = (par_tock.index(polozaj) + 1) % 2
-          osebek.polozaj = par_tock[preslikaj_v]
+      for portal in self.plosca.portali:
+        for lokacija in self.plosca.portali[portal]:
+          a, b = lokacija
+          if (int(round(x)), int(round(y))) == lokacija:
+            #nastavimo koordinate na drug del portala
+            osebek.polozaj = self.plosca.portali[portal][0 ** self.plosca.portali[portal].index(lokacija)]
+            nov_x, nov_y = osebek.polozaj
+            if nov_x == 0:
+              osebek.trenutna_smer = osebek.naslednja_smer = DESNO
+            elif nov_x == self.sirina - 1:
+              osebek.trenutna_smer = osebek.naslednja_smer = LEVO
+            elif nov_y == 0:
+              osebek.trenutna_smer = osebek.naslednja_smer = DOL
+            elif nov_y == self.visina - 1:
+              osebek.trenutna_smer = osebek.naslednja_smer = GOR
+            break
     x, y = osebek.polozaj
     if celostevilske_koordinate(osebek.polozaj):
       naslednja_smer_x, naslednja_smer_y = osebek.naslednja_smer
@@ -108,7 +119,7 @@ class Igra:
         osebek.trenutna_smer = osebek.naslednja_smer
     smer_x, smer_y = osebek.trenutna_smer
     if celostevilske_koordinate(osebek.polozaj) and self.plosca.polje[smer_y + int(round(y))][smer_x + int(round(x))] == "1":
-        return 
+      return 
     osebek.polozaj = x + dolzina_premika * smer_x, y + dolzina_premika * smer_y
 
   def sprememba_smeri(self, smer):

@@ -14,6 +14,7 @@ BARVA_CEKINA = "#00A"
 
 VELIKOST_bonbona = SKALA * be.polmer_bonbona * 2
 BARVA_bonbona = "#FF0"
+# tocke bomo belezili tu, ker se v be pobrisejo
 TOP_SCORE = 0
 
 class PrikazIgre:
@@ -30,6 +31,7 @@ class PrikazIgre:
     self.narisi()
     self.okno.after(self.speed, self.korak)
 
+  #pokaze, da je pakman umrl
   def koncaj(self, sporocilo):
     global TOP_SCORE
     TOP_SCORE += self.igra.rezultat
@@ -40,6 +42,7 @@ class PrikazIgre:
     koncno_okno.mainloop()
     return
 
+  # pokaze, da gre pakman v naslednji level
   def levelWin(self):
     global TOP_SCORE
     TOP_SCORE += self.igra.rezultat
@@ -50,6 +53,7 @@ class PrikazIgre:
     self.novo_okno.after(3000, self.levelup)
     self.novo_okno.mainloop()
 
+  #pakman gre v naslednji level
   def levelup(self):
     #PONOVNI ZAGON
     print("Level UP! SCORE:", self.igra.rezultat)
@@ -68,7 +72,6 @@ class PrikazIgre:
       self.narisi()
       self.okno.after(self.speed, self.korak)
     
-
   def obdelaj_tipko(self, event):
     if event.keysym == 'Right':
         self.igra.sprememba_smeri(be.DESNO)
@@ -79,6 +82,7 @@ class PrikazIgre:
     elif event.keysym == 'Down':
         self.igra.sprememba_smeri(be.DOL)
 
+  #narise vse stvari v oknu
   def narisi(self):
     self.platno.delete('all')
     for y, vrstica in enumerate(self.igra.plosca.polje):

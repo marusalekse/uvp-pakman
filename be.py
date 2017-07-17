@@ -7,6 +7,7 @@ polmer_kovancka = 0.1
 polmer_bonbona = 0.2
 dolzina_premika = 0.1
 
+#preveri, ce so koordinate cela stevila
 def celostevilske_koordinate(koordinate):
   x, y = koordinate
   return round(x, 2) == int(round(x, 2)) and round(y, 2) == int(round(y,2))
@@ -19,9 +20,6 @@ class Pakman:
     self.trenutna_smer = LEVO
     self.naslednja_smer = LEVO
 
-
-
-
 class IgralnaPlosca:
   def __init__(self, ime_datoteke_s_poljem):
     self.polje = []
@@ -31,7 +29,7 @@ class IgralnaPlosca:
     self.cekini = []
     self.bonboni = []
 
-    #polje bomo naredili kot tabelo vseh polij, vrednosti na njih povejo kaj je na njemu
+    #polje bomo naredili kot tabelo vseh polj, vrednosti na njih povejo kaj je na njemu
     with open(ime_datoteke_s_poljem) as f:
       y = 0
       for vrstica in f:
@@ -80,20 +78,20 @@ class Igra:
     for duhec in self.plosca.zacetni_polozaji_duhcev:
       self.duhci.append(Pakman(duhec))
 
+  #preveri, ce se duhec in pakman dotikata
   def zabijanje(self):
     for duhec in self.duhci:
         a, b = duhec.polozaj
         x, y = self.pakman.polozaj
         if (a-x)**2 + (b-y)**2 <= (polmer_pakmana + polmer_duhca)**2:
           if self.pakman.aktiviranost <= 0:
-            # self.igra_poteka = False
-            # TODO KONCAJ IGRO
             return False
           else:
             duhec.polozaj = duhec.zacetni_polozaj
             self.rezultat += 50
     return True
 
+  #premakne pakmana, ce se da
   def premik_pakmana(self, osebek):
     if celostevilske_koordinate(osebek.polozaj):
       for ime_portala, par_tock in self.plosca.portali.items():
@@ -102,11 +100,10 @@ class Igra:
         if polozaj in par_tock:
           preslikaj_v = (par_tock.index(polozaj) + 1) % 2
           osebek.polozaj = par_tock[preslikaj_v]
-
     x, y = osebek.polozaj
     if celostevilske_koordinate(osebek.polozaj):
       naslednja_smer_x, naslednja_smer_y = osebek.naslednja_smer
-      # Preverim, ali je polje prosto
+      # Preveri, ce je polje prosto
       if self.plosca.polje[naslednja_smer_y + int(round(y))][naslednja_smer_x + int(round(x))] != "1":
         osebek.trenutna_smer = osebek.naslednja_smer
     smer_x, smer_y = osebek.trenutna_smer
@@ -117,6 +114,7 @@ class Igra:
   def sprememba_smeri(self, smer):
     self.pakman.naslednja_smer = smer
 
+  #premakne duhca
   def premik_duhca(self, duhec):
     x, y = duhec.polozaj
     if celostevilske_koordinate(duhec.polozaj):
@@ -138,8 +136,7 @@ class Igra:
     smer_x, smer_y = duhec.trenutna_smer
     duhec.polozaj = (x + smer_x * dolzina_premika, y + smer_y * dolzina_premika)
 
-
-
+  # ce je na istem mestu kot cekin ga poje, doda tocke k rezultatu
   def preveri_pojej_cekin(self):
     for cekin in self.plosca.cekini:
       a, b = cekin
@@ -159,6 +156,7 @@ class Igra:
         # 10 korakov na polje, 50 polj
         self.pakman.aktiviranost = 10 * 20 
 
+  #vse, kar se zgodi v enem koraku
   def korak(self):
     konec = not self.zabijanje()
     if konec:

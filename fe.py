@@ -7,7 +7,7 @@ BARVA_PAKMANA = '#EE0'
 OBRATNA_BARVA_PAKMANA = '#11F'
 
 BARVA_DUHCA = '#00E'
-KORAK_MS = 30
+ZACETNA_HITROST = 30
 
 VELIKOST_CEKINA = SKALA * be.polmer_kovancka * 2
 BARVA_CEKINA = "#00A"
@@ -15,37 +15,38 @@ BARVA_CEKINA = "#00A"
 VELIKOST_bonbona = SKALA * be.polmer_bonbona * 2
 BARVA_bonbona = "#FF0"
 # tocke bomo belezili tu, ker se v be pobrisejo
-TOP_SCORE = 0
+REZULTAT = 0
 
 class PrikazIgre:
-  def __init__(self, okno, ime_povrsine, speed):
+  def __init__(self, okno, ime_povrsine, hitrost, level):
     self.okno = okno
-    self.speed = speed
+    self.hitrost = hitrost
     self.igra = be.Igra(ime_povrsine)
     self.platno = tk.Canvas(
         width=SKALA * self.igra.sirina,
         height=SKALA * self.igra.visina
     )
+    self.level = level
     self.okno.bind('<Key>', self.obdelaj_tipko)
     self.platno.pack()
     self.narisi()
-    self.okno.after(self.speed, self.korak)
+    self.okno.after(self.hitrost, self.korak)
 
   #pokaze, da je pakman umrl
   def koncaj(self, sporocilo):
-    global TOP_SCORE
-    TOP_SCORE += self.igra.rezultat
+    global REZULTAT
+    REZULTAT += self.igra.rezultat
     self.okno.destroy()
     koncno_okno = tk.Tk()
-    sporocilo = tk.Label(koncno_okno, text="{}! Vaš rezultat: {}".format(sporocilo, TOP_SCORE))
+    sporocilo = tk.Label(koncno_okno, text="{}! Vaš rezultat: {}".format(sporocilo, REZULTAT))
     sporocilo.pack()
     koncno_okno.mainloop()
     return
 
   # pokaze, da gre pakman v naslednji level
   def levelWin(self):
-    global TOP_SCORE
-    TOP_SCORE += self.igra.rezultat
+    global REZULTAT
+    REZULTAT += self.igra.rezultat
     self.okno.destroy()
     self.novo_okno = tk.Tk()
     sporocilo = tk.Label(self.novo_okno, text="Level UP!!!")
@@ -59,7 +60,7 @@ class PrikazIgre:
     print("Level UP! SCORE:", self.igra.rezultat)
     self.novo_okno.destroy()
     okno = tk.Tk()
-    moj_program = PrikazIgre(okno, 'povrsina/povrsina.txt', self.speed - 2)
+    moj_program = PrikazIgre(okno, 'povrsina/povrsina.txt', int(round(self.hitrost * 0.75)), self.level + 1)
     okno.mainloop()
 
   def korak(self):
@@ -70,7 +71,7 @@ class PrikazIgre:
       self.levelWin()
     else:
       self.narisi()
-      self.okno.after(self.speed, self.korak)
+      self.okno.after(self.hitrost, self.korak)
     
   def obdelaj_tipko(self, event):
     if event.keysym == 'Right':
@@ -145,5 +146,5 @@ class PrikazIgre:
     )
 
 okno = tk.Tk()
-moj_program = PrikazIgre(okno, 'povrsina/povrsina.txt', KORAK_MS)
+moj_program = PrikazIgre(okno, 'povrsina/povrsina.txt', ZACETNA_HITROST, 1)
 okno.mainloop()
